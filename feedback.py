@@ -1,14 +1,21 @@
-import openai
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS  # Import CORS
-import os
+
+load_dotenv(
+    '.env'
+)
+
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Set your OpenAI API key directly (for testing only)
-openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # Initialize Flask app
 app = Flask(__name__, template_folder='templates')
 CORS(app)  # Enable CORS for all routes
+
 
 def get_feedback_response(message):
     """
@@ -16,18 +23,19 @@ def get_feedback_response(message):
     specifically for collecting event feedback using the gpt-4 model.
     """
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Use the correct model identifier
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant collecting feedback for an event at People+AI."},
-                {"role": "user", "content": message}
-            ],
-            max_tokens=100,  # Optional: Adjust based on expected response length
-            temperature=0.7  # Optional: Adjust creativity level
-        )
-        return response['choices'][0]['message']['content'].strip()
+        response = client.chat.completions.create(model="gpt-4",  # Use the correct model identifier
+                                                  messages=[
+                                                      {"role": "system", "content": "You are a helpful assistant collecting feedback for an event at People+AI."},
+                                                      {"role": "user",
+                                                          "content": message}
+                                                  ],
+                                                  max_tokens=100,  # Optional: Adjust based on expected response length
+                                                  temperature=0.7
+                                                  )  # Optional: Adjust creativity level)
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Error: {str(e)}"
+
 
 @app.route('/')
 def home():
@@ -36,6 +44,7 @@ def home():
     """
     return render_template('index.html')
 
+
 @app.route('/feedback', methods=['POST'])
 def collect_feedback():
     """
@@ -43,7 +52,7 @@ def collect_feedback():
     """
     data = request.get_json()
     user_message = data.get('message', '')
-    
+
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
@@ -52,5 +61,6 @@ def collect_feedback():
 
     return jsonify({"feedback_response": feedback_response})
 
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8001)
