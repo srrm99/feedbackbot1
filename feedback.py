@@ -1,66 +1,51 @@
-from openai import OpenAI
-from dotenv import load_dotenv
-import os
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS
+from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv(
-    '.env'
+    dotenv_path=".env",
 )
+import os
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+import os
 
-# Set your OpenAI API key directly (for testing only)
-
-# Initialize Flask app
 app = Flask(__name__, template_folder='templates')
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
+# Load your OpenAI API key
 
-def get_feedback_response(message):
-    """
-    This function uses the latest Chat Completion API method to generate a structured response
-    specifically for collecting event feedback using the gpt-4 model.
-    """
-    try:
-        response = client.chat.completions.create(model="gpt-4",  # Use the correct model identifier
-                                                  messages=[
-                                                      {"role": "system", "content": "You are a helpful assistant collecting feedback for an event at People+AI."},
-                                                      {"role": "user",
-                                                          "content": message}
-                                                  ],
-                                                  max_tokens=100,  # Optional: Adjust based on expected response length
-                                                  temperature=0.7
-                                                  )  # Optional: Adjust creativity level)
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"Error: {str(e)}"
-
+# Load the feedback prompt
+with open("prompts/feedback_prompt.txt", "r") as file:
+    feedback_prompt = file.read()
 
 @app.route('/')
 def home():
-    """
-    Serve the HTML form for collecting feedback.
-    """
     return render_template('index.html')
 
-
-@app.route('/feedback', methods=['POST'])
-def collect_feedback():
-    """
-    Flask endpoint to receive event feedback and return OpenAI-generated response using gpt-4.
-    """
+@app.route('/chat', methods=['POST'])
+def chat():
     data = request.get_json()
-    user_message = data.get('message', '')
+    conversation = data.get('conversation', [])
 
-    if not user_message:
-        return jsonify({"error": "No message provided"}), 400
+    if not conversation:
+        return jsonify({"error": "No conversation provided."}), 400
 
-    # Call the function to get feedback response
-    feedback_response = get_feedback_response(user_message)
+    try:
+        # Build the messages for OpenAI API
+        messages = [{"role": "system", "content": feedback_prompt}] + conversation
 
-    return jsonify({"feedback_response": feedback_response})
+        response = client.chat.completions.create(model="gpt-4",
+        messages=messages,
+        max_tokens=150,
+        temperature=0.7)
 
+        reply = response.choices[0].message.content.strip()
+
+        return jsonify({"reply": reply})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8001)
+    app.run(debug=True, port=8001)

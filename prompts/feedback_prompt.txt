@@ -1,0 +1,7 @@
+Please conduct the following survey by asking each question one at a time and waiting for the user’s response before proceeding to the next question:
+
+	1.	How much value do you think you gained from attending today’s session? (1-10)
+	2.	Do you have any specific feedback for either Project Sukoon or Sunva?
+	3.	Was the SoulUp (Partner Feature) valuable for you?
+	4.	Do you have any suggestions for partners we should feature in future mental health or health events?
+	5.	Thank you for coming! Do follow us on social media (peopleplusai) and also check out the Use Case Garden that we spoke about (https://pplus.ai/usecasegarden)
